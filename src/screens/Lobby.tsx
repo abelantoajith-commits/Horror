@@ -49,12 +49,29 @@ export const Lobby: React.FC<LobbyProps> = ({
   );
 
   const playerCount = players.length;
-  const allReady = players.length >= CONFIG.MIN_PLAYERS && players.every((p) => p.ready);
-  const canStart = isHost && playerCount >= CONFIG.MIN_PLAYERS && playerCount <= CONFIG.MAX_PLAYERS && allReady;
+  const isTestRoom = roomKey === 'TEST';
+  const minRequired = isTestRoom ? 1 : CONFIG.MIN_PLAYERS;
+  const allReady = players.length >= minRequired && players.every((p) => p.ready);
+  const canStart = isHost && playerCount >= minRequired && playerCount <= CONFIG.MAX_PLAYERS && allReady;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black text-gray-200 select-none">
       <div className="max-w-2xl w-full bg-[#0d0d12] border border-zinc-800 rounded-xl p-8 shadow-2xl">
+        {/* Special Common Test Lobby Banner */}
+        {isTestRoom && (
+          <div className="mb-4 p-3 rounded-lg bg-purple-950/60 border border-purple-600/80 text-xs text-purple-200 flex items-center justify-between shadow-lg shadow-purple-950/40">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🧪</span>
+              <span>
+                <strong>COMMON TESTING LOBBY:</strong> All users who click Test connect here with a shared host. (Test mode can start with 1+ players).
+              </span>
+            </div>
+            <span className="px-2 py-0.5 bg-purple-800/80 text-[10px] font-mono rounded font-bold uppercase tracking-wider">
+              TEST MODE
+            </span>
+          </div>
+        )}
+
         {/* Network status banner */}
         {networkMode === 'local' ? (
           <div className="mb-4 p-2.5 rounded bg-amber-950/40 border border-amber-800/60 text-xs text-amber-300 flex items-center justify-between">
@@ -246,8 +263,8 @@ export const Lobby: React.FC<LobbyProps> = ({
         {/* Status helper text for host */}
         {isHost && !canStart && (
           <p className="text-center text-xs text-amber-500/80 mt-3 font-mono">
-            {playerCount < CONFIG.MIN_PLAYERS
-              ? `Need at least 3 players (${playerCount}/${CONFIG.MIN_PLAYERS})`
+            {playerCount < minRequired
+              ? `Need at least ${minRequired} player${minRequired > 1 ? 's' : ''} (${playerCount}/${minRequired})`
               : 'Waiting for all players to click Ready'}
           </p>
         )}

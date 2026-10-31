@@ -14,8 +14,8 @@ export const CONFIG = {
   SPEED_HIDER: 60,           // px/s
   SPEED_NAGAVALLI: 58,       // px/s (slightly slower so hiders can escape)
 
-  VISION_NAGAVALLI: 36,      // light radius in internal px (tuned so players in sight range are visible)
-  VISION_HIDER: 30,
+  VISION_NAGAVALLI: 60,      // light radius in internal px (generous sight so victims in lantern light are clear)
+  VISION_HIDER: 50,
 
   CATCH_DISTANCE: 10,        // px between centers to count as caught
   SEND_RATE_HZ: 10,          // position broadcasts per second

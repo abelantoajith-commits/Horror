@@ -164,7 +164,7 @@ export function renderFrame(
     const distToFocus = Math.hypot(p.x - focusPlayer.x, p.y - focusPlayer.y);
 
     // Rule: Do NOT render players outside vision radius
-    if (p.id !== focusPlayer.id && distToFocus > effectiveVisionRadius + 10) {
+    if (p.id !== focusPlayer.id && distToFocus > effectiveVisionRadius + 15) {
       continue;
     }
 
@@ -186,12 +186,22 @@ export function renderFrame(
       }
     }
 
-    // Small name tag if nearby
-    if (p.id !== focusPlayer.id && distToFocus <= effectiveVisionRadius) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.font = '6px monospace';
+    // High-visibility aura and clear name tag for remote players within vision
+    if (p.id !== focusPlayer.id) {
+      ctx.save();
+      ctx.strokeStyle = p.isNagavalli ? 'rgba(239, 68, 68, 0.9)' : 'rgba(56, 189, 248, 0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, CONFIG.PLAYER_SIZE / 2 + 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 8px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(p.name, p.x, p.y - half - 2);
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 4;
+      ctx.fillText(p.name, p.x, p.y - half - 3);
+      ctx.restore();
     }
   }
 
@@ -210,18 +220,18 @@ export function renderFrame(
     mCtx.fillStyle = '#020204';
     mCtx.fillRect(0, 0, w, h);
 
-    // Cut radial circle hole
+    // Cut radial circle hole (70% crystal clear center, soft transition to pitch black at edge)
     mCtx.globalCompositeOperation = 'destination-out';
     const grad = mCtx.createRadialGradient(
       screenFocusX,
       screenFocusY,
-      effectiveVisionRadius * 0.35,
+      effectiveVisionRadius * 0.7,
       screenFocusX,
       screenFocusY,
       effectiveVisionRadius
     );
     grad.addColorStop(0, 'rgba(0, 0, 0, 1)');
-    grad.addColorStop(0.8, 'rgba(0, 0, 0, 0.85)');
+    grad.addColorStop(0.85, 'rgba(0, 0, 0, 0.9)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     mCtx.fillStyle = grad;

@@ -6,7 +6,7 @@ import { GameScreen } from './screens/GameScreen';
 import { Result } from './screens/Result';
 import { RoomConnection, PlayerPresence, GameStartPayload, PosPayload, CaughtPayload, PhotoPayload, GameEndPayload } from './net/room';
 import { CONFIG } from './game/config';
-import { generateMaze, computeSpawns } from './game/maze';
+import { generateMaze, computeSpawns, checkCollision } from './game/maze';
 import { GameEngine } from './game/engine';
 import { capturePhoto } from './camera/capture';
 import { spriteManager } from './game/render';
@@ -168,6 +168,10 @@ export const App: React.FC = () => {
     joinOrCreateRoom(key);
   };
 
+  const handleJoinTestRoom = () => {
+    joinOrCreateRoom('TEST');
+  };
+
   const handleToggleReady = (ready: boolean) => {
     roomRef.current?.updatePresence({ ready });
   };
@@ -179,20 +183,59 @@ export const App: React.FC = () => {
   // Host starts the game
   const handleHostStartGame = () => {
     const currentList = playersRef.current.length > 0 ? playersRef.current : players;
-    if (!roomRef.current || currentList.length < CONFIG.MIN_PLAYERS) return;
+    const isTestRoom = roomKey === 'TEST';
+    const minRequired = isTestRoom ? 1 : CONFIG.MIN_PLAYERS;
+    if (!roomRef.current || currentList.length < minRequired) return;
 
-    // Pick random Nagavalli
-    const randomIndex = Math.floor(Math.random() * currentList.length);
-    const chosenNagavalliId = currentList[randomIndex].playerId;
+    let effectiveList = [...currentList];
+    let chosenNagavalliId = currentList[0].playerId;
+
+    if (effectiveList.length === 1 && isTestRoom) {
+      // Solo test: local player is Nagavalli, add a test dummy hider so vision & catch can be verified
+      const dummyHiderId = 'test_dummy_hider';
+      effectiveList.push({
+        playerId: dummyHiderId,
+        name: 'Target Dummy',
+        skin: 'hider_1',
+        ready: true,
+        joinedAt: Date.now(),
+      });
+      chosenNagavalliId = currentList[0].playerId;
+    } else {
+      // Pick random Nagavalli
+      const randomIndex = Math.floor(Math.random() * currentList.length);
+      chosenNagavalliId = currentList[randomIndex].playerId;
+    }
 
     const seed = Math.floor(Math.random() * 1000000);
     const maze = generateMaze(seed);
-    const hiderIds = currentList.filter((p) => p.playerId !== chosenNagavalliId).map((p) => p.playerId);
+    const hiderIds = effectiveList.filter((p) => p.playerId !== chosenNagavalliId).map((p) => p.playerId);
     const spawns = computeSpawns(seed, maze, chosenNagavalliId, hiderIds);
+
+    // If solo test dummy, place dummy adjacent to Nagavalli so it's directly visible
+    if (effectiveList.length === 2 && effectiveList[1].playerId === 'test_dummy_hider') {
+      const nagX = spawns[chosenNagavalliId].x;
+      const nagY = spawns[chosenNagavalliId].y;
+      const candidateOffsets = [
+        { dx: 32, dy: 0 },
+        { dx: -32, dy: 0 },
+        { dx: 0, dy: 32 },
+        { dx: 0, dy: -32 },
+        { dx: 48, dy: 0 },
+      ];
+      for (const off of candidateOffsets) {
+        const testX = nagX + off.dx;
+        const testY = nagY + off.dy;
+        if (!checkCollision(maze, testX, testY, CONFIG.PLAYER_SIZE)) {
+          spawns['test_dummy_hider'] = { x: testX, y: testY };
+          break;
+        }
+      }
+    }
 
     const startAt = Date.now() + 1000; // Synchronized start in 1 second
 
-    const playerSummaries = currentList.map((p) => ({
+    const playerSummaries = effectiveList.map((p) => ({
       id: p.playerId,
       name: p.name,
       skin: p.skin,
@@ -354,6 +397,7 @@ export const App: React.FC = () => {
           onUpdatePlayerName={setPlayerName}
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
+          onJoinTestRoom={handleJoinTestRoom}
           errorMessage={menuError}
         />
       )}

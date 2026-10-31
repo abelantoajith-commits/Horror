@@ -53,7 +53,14 @@ export class GameEngine {
   private lastBroadcastX = -999;
   private lastBroadcastY = -999;
 
-  public currentPhase: GamePhase = 'role_reveal';
+  private lastPhase: GamePhase = 'role_reveal';
+  public get currentPhase(): GamePhase {
+    const elapsedSec = (Date.now() - this.startAt) / 1000;
+    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC) return 'role_reveal';
+    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC) return 'head_start';
+    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC + CONFIG.CHASE_SEC) return 'chase';
+    return 'ended';
+  }
   public caughtHiderIds: Set<string> = new Set();
   public totalHidersCount: number;
   private hasReportedNagavalliWin = false;
@@ -114,6 +121,7 @@ export class GameEngine {
     this.ctx = canvas.getContext('2d');
     this.input.attach();
     window.addEventListener('keydown', this.handleSpectatorKey);
+    (window as any).__ENGINE__ = this;
 
     this.lastFrameTime = performance.now();
     this.animFrameId = requestAnimationFrame(this.gameLoop);
@@ -126,6 +134,7 @@ export class GameEngine {
     }
     this.input.detach();
     window.removeEventListener('keydown', this.handleSpectatorKey);
+    delete (window as any).__ENGINE__;
   }
 
   private handleSpectatorKey = (e: KeyboardEvent) => {
@@ -211,43 +220,32 @@ export class GameEngine {
   };
 
   private updatePhases() {
-    const elapsedSec = (Date.now() - this.startAt) / 1000;
-
-    let nextPhase: GamePhase = 'role_reveal';
-    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC) {
-      nextPhase = 'role_reveal';
-    } else if (elapsedSec < CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC) {
-      nextPhase = 'head_start';
-    } else if (elapsedSec < CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC + CONFIG.CHASE_SEC) {
-      nextPhase = 'chase';
-    } else {
-      nextPhase = 'ended';
-      if (!this.hasReportedHidersWin) {
-        this.hasReportedHidersWin = true;
-        this.callbacks.onHidersWin();
-      }
+    const phase = this.currentPhase;
+    if (phase === 'ended' && !this.hasReportedHidersWin) {
+      this.hasReportedHidersWin = true;
+      this.callbacks.onHidersWin();
     }
-
-    if (nextPhase !== this.currentPhase) {
-      this.currentPhase = nextPhase;
-      this.callbacks.onPhaseChange?.(nextPhase);
+    if (phase !== this.lastPhase) {
+      this.lastPhase = phase;
+      this.callbacks.onPhaseChange?.(phase);
     }
   }
 
   public getTimeRemaining(): { phase: GamePhase; seconds: number } {
+    const phase = this.currentPhase;
     const elapsedSec = (Date.now() - this.startAt) / 1000;
-    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC) {
-      return { phase: 'role_reveal', seconds: Math.max(0, CONFIG.ROLE_REVEAL_SEC - elapsedSec) };
+    if (phase === 'role_reveal') {
+      return { phase, seconds: Math.max(0, CONFIG.ROLE_REVEAL_SEC - elapsedSec) };
     }
-    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC) {
+    if (phase === 'head_start') {
       return {
-        phase: 'head_start',
+        phase,
         seconds: Math.max(0, CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC - elapsedSec),
       };
     }
-    if (elapsedSec < CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC + CONFIG.CHASE_SEC) {
+    if (phase === 'chase') {
       return {
-        phase: 'chase',
+        phase,
         seconds: Math.max(
           0,
           CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC + CONFIG.CHASE_SEC - elapsedSec
@@ -287,23 +285,23 @@ export class GameEngine {
       }
     }
 
-    // 10 Hz broadcast rate limit (100 ms) and only send if moved
+    // 10 Hz broadcast rate limit (100 ms) when moving, plus continuous 500 ms heartbeat when still
     const now = Date.now();
     const intervalMs = 1000 / CONFIG.SEND_RATE_HZ;
-    if (now - this.lastBroadcastTime >= intervalMs) {
-      const dist = Math.hypot(this.localX - this.lastBroadcastX, this.localY - this.lastBroadcastY);
-      if (dist > 0.5) {
-        this.lastBroadcastTime = now;
-        this.lastBroadcastX = this.localX;
-        this.lastBroadcastY = this.localY;
-        this.callbacks.onBroadcastPos({
-          id: this.localPlayerId,
-          x: Math.round(this.localX),
-          y: Math.round(this.localY),
-          dir: this.localDir,
-          t: now,
-        });
-      }
+    const dist = Math.hypot(this.localX - this.lastBroadcastX, this.localY - this.lastBroadcastY);
+    const forceHeartbeat = now - this.lastBroadcastTime >= 500;
+
+    if (now - this.lastBroadcastTime >= intervalMs && (dist > 0.5 || forceHeartbeat)) {
+      this.lastBroadcastTime = now;
+      this.lastBroadcastX = this.localX;
+      this.lastBroadcastY = this.localY;
+      this.callbacks.onBroadcastPos({
+        id: this.localPlayerId,
+        x: Math.round(this.localX),
+        y: Math.round(this.localY),
+        dir: this.localDir,
+        t: now,
+      });
     }
   }
 
@@ -319,7 +317,7 @@ export class GameEngine {
   public getVisibleTargetHider(): RemotePlayer | null {
     if (!this.isNagavalli || this.currentPhase !== 'chase') return null;
 
-    const visionRadius = CONFIG.VISION_NAGAVALLI + 8;
+    const visionRadius = CONFIG.VISION_NAGAVALLI + 15;
     let closest: RemotePlayer | null = null;
     let minDist = Infinity;
 

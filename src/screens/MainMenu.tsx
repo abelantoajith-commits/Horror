@@ -5,6 +5,7 @@ interface MainMenuProps {
   onUpdatePlayerName: (name: string) => void;
   onCreateRoom: () => void;
   onJoinRoom: (roomKey: string) => void;
+  onJoinTestRoom?: () => void;
   errorMessage: string | null;
 }
 
@@ -13,6 +14,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onUpdatePlayerName,
   onCreateRoom,
   onJoinRoom,
+  onJoinTestRoom,
   errorMessage,
 }) => {
   const [joinKeyInput, setJoinKeyInput] = useState('');
@@ -116,6 +118,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </button>
             </form>
           )}
+
+          {/* Dedicated Common Test Lobby Button */}
+          <button
+            onClick={() => {
+              if (!validateName()) return;
+              if (onJoinTestRoom) {
+                onJoinTestRoom();
+              } else {
+                onJoinRoom('TEST');
+              }
+            }}
+            className="w-full py-3 px-6 bg-purple-950/70 hover:bg-purple-900/90 active:bg-purple-950 text-purple-200 font-bold rounded-lg border border-purple-700/80 transition-all tracking-wider text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50"
+          >
+            <span>🧪</span> JOIN SHARED TEST LOBBY (ALL CONNECTED USERS)
+          </button>
         </div>
 
         <div className="mt-8 pt-6 border-t border-zinc-900 text-xs text-zinc-500">
