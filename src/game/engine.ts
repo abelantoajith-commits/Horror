@@ -18,6 +18,9 @@ export interface RemotePlayer {
   dir: Direction;
   isCaught: boolean;
   lastUpdated: number;
+  nextDecisionTime?: number;
+  botDir?: Direction;
+  botMoving?: boolean;
 }
 
 export interface EngineCallbacks {
@@ -306,9 +309,41 @@ export class GameEngine {
   }
 
   private updateRemoteInterpolation(dt: number) {
-    // Lerp remote players toward target
     const lerpFactor = Math.min(1, dt * 15);
+    const now = Date.now();
+
     for (const remote of this.remotePlayers.values()) {
+      // Autonomous wander AI for bot test characters
+      if (remote.id.startsWith('bot_hider_') && !remote.isCaught && this.currentPhase === 'chase') {
+        if (!remote.nextDecisionTime || now > remote.nextDecisionTime) {
+          remote.nextDecisionTime = now + 1200 + Math.random() * 1600;
+          const dirs: Direction[] = ['up', 'down', 'left', 'right'];
+          remote.botDir = dirs[Math.floor(Math.random() * dirs.length)];
+          remote.botMoving = Math.random() > 0.25;
+        }
+
+        if (remote.botMoving && remote.botDir) {
+          const speed = CONFIG.SPEED_HIDER * 0.7;
+          let dx = 0;
+          let dy = 0;
+          if (remote.botDir === 'left') dx = -1;
+          if (remote.botDir === 'right') dx = 1;
+          if (remote.botDir === 'up') dy = -1;
+          if (remote.botDir === 'down') dy = 1;
+
+          const nX = remote.targetX + dx * speed * dt;
+          const nY = remote.targetY + dy * speed * dt;
+          if (!checkCollision(this.maze, nX, nY, CONFIG.PLAYER_SIZE)) {
+            remote.targetX = nX;
+            remote.targetY = nY;
+            remote.dir = remote.botDir;
+            remote.lastUpdated = now;
+          } else {
+            remote.botMoving = false;
+          }
+        }
+      }
+
       remote.x += (remote.targetX - remote.x) * lerpFactor;
       remote.y += (remote.targetY - remote.y) * lerpFactor;
     }
@@ -389,6 +424,7 @@ export class GameEngine {
       isNagavalli: this.isNagavalli,
       skin: '',
       isCaught: this.isCaught,
+      isMoving: this.input.getVector().isMoving,
     });
 
     // Remote players
@@ -402,6 +438,7 @@ export class GameEngine {
         isNagavalli: r.isNagavalli,
         skin: r.skin,
         isCaught: r.isCaught,
+        isMoving: r.botMoving || Math.hypot(r.targetX - r.x, r.targetY - r.y) > 0.5 || Date.now() - r.lastUpdated < 250,
       });
     }
 

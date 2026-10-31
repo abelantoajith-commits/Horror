@@ -14,12 +14,20 @@ interface LobbyProps {
   onLeaveRoom: () => void;
 }
 
-const AVAILABLE_SKINS = [
-  { id: 'hider_1', label: 'Blue', color: '#3b82f6' },
-  { id: 'hider_2', label: 'Green', color: '#10b981' },
-  { id: 'hider_3', label: 'Amber', color: '#f59e0b' },
-  { id: 'hider_4', label: 'Pink', color: '#ec4899' },
-  { id: 'hider_5', label: 'Violet', color: '#8b5cf6' },
+export interface CharacterInfo {
+  id: string;
+  name: string;
+  avatar: string;
+  tag: string;
+  color: string;
+}
+
+export const AVAILABLE_CHARACTERS: CharacterInfo[] = [
+  { id: 'hider_1', name: 'Player 1', avatar: '/characters/player_1.png', tag: 'Survivor', color: '#3b82f6' },
+  { id: 'hider_2', name: 'Player 2', avatar: '/characters/player_2.png', tag: 'Shadow', color: '#10b981' },
+  { id: 'hider_3', name: 'Player 3', avatar: '/characters/player_3.png', tag: 'Ghost', color: '#f59e0b' },
+  { id: 'hider_4', name: 'Player 4', avatar: '/characters/player_4.png', tag: 'Seeker', color: '#ec4899' },
+  { id: 'hider_5', name: 'Player 5', avatar: '/characters/player_5.png', tag: 'Scout', color: '#8b5cf6' },
 ];
 
 export const Lobby: React.FC<LobbyProps> = ({
@@ -133,6 +141,8 @@ export const Lobby: React.FC<LobbyProps> = ({
               if (player) {
                 const isLocal = player.playerId === localPlayerId;
                 const isThisHost = index === 0;
+                const charInfo = AVAILABLE_CHARACTERS.find((c) => c.id === player.skin) || AVAILABLE_CHARACTERS[0];
+
                 return (
                   <div
                     key={player.playerId}
@@ -143,18 +153,23 @@ export const Lobby: React.FC<LobbyProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-5 h-5 rounded-sm border border-black/40 shadow-sm"
-                        style={{
-                          backgroundColor:
-                            AVAILABLE_SKINS.find((s) => s.id === player.skin)?.color || '#3b82f6',
-                        }}
-                      />
-                      <span className="font-mono text-sm font-semibold text-white">
-                        {player.name}
-                        {isLocal && <span className="text-xs text-red-400 ml-2">(You)</span>}
-                        {isThisHost && <span className="text-xs text-amber-400 ml-2">[Host]</span>}
-                      </span>
+                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-950 flex items-center justify-center shadow-md">
+                        <img
+                          src={charInfo.avatar}
+                          alt={charInfo.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div>
+                        <span className="font-mono text-sm font-semibold text-white block">
+                          {player.name}
+                          {isLocal && <span className="text-xs text-red-400 ml-2">(You)</span>}
+                          {isThisHost && <span className="text-xs text-amber-400 ml-2">[Host]</span>}
+                        </span>
+                        <span className="text-[10px] font-mono text-zinc-500">
+                          Playing as {charInfo.name}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -185,45 +200,64 @@ export const Lobby: React.FC<LobbyProps> = ({
           </div>
         </div>
 
-        {/* Skin Selection for Local Player */}
+        {/* Character Selection for Local Player */}
         {localPlayer && (
-          <div className="mb-6 p-4 bg-zinc-900/60 border border-zinc-800 rounded-lg">
-            <span className="block text-xs uppercase font-bold tracking-wider text-zinc-400 mb-3">
-              Choose Your Hider Skin
-            </span>
-            <div className="grid grid-cols-5 gap-2">
-              {AVAILABLE_SKINS.map((skin) => {
-                const isSelected = localPlayer.skin === skin.id;
-                const isTaken = takenSkins.has(skin.id);
+          <div className="mb-6 p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <span className="block text-xs uppercase font-bold tracking-wider text-zinc-300">
+                Choose Your Character
+              </span>
+              <span className="text-[11px] font-mono text-zinc-500">
+                Selected: <strong className="text-red-400">{AVAILABLE_CHARACTERS.find((c) => c.id === localPlayer.skin)?.name || 'Player 1'}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-5 gap-2.5">
+              {AVAILABLE_CHARACTERS.map((char) => {
+                const isSelected = localPlayer.skin === char.id;
+                const isTaken = takenSkins.has(char.id);
 
                 return (
                   <button
-                    key={skin.id}
+                    key={char.id}
                     disabled={isTaken}
-                    onClick={() => onSelectSkin(skin.id)}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-lg border transition ${
+                    onClick={() => onSelectSkin(char.id)}
+                    className={`group relative flex flex-col items-center p-2 rounded-xl border transition-all duration-150 ${
                       isSelected
-                        ? 'border-red-500 bg-red-950/30'
+                        ? 'border-red-500 bg-red-950/40 shadow-[0_0_15px_rgba(239,68,68,0.35)] scale-[1.02]'
                         : isTaken
-                        ? 'border-zinc-800 bg-zinc-900/20 opacity-30 cursor-not-allowed'
-                        : 'border-zinc-700 bg-zinc-800 hover:border-zinc-500'
+                        ? 'border-zinc-800/80 bg-zinc-950/40 opacity-30 cursor-not-allowed'
+                        : 'border-zinc-800 bg-zinc-900/80 hover:border-zinc-600 hover:bg-zinc-800/90'
                     }`}
                   >
-                    <div
-                      className="w-6 h-6 rounded-sm mb-1.5 shadow"
-                      style={{ backgroundColor: skin.color }}
-                    />
-                    <span className="text-[11px] font-mono text-zinc-300">
-                      {skin.label}
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden flex items-center justify-center mb-1 transition-transform group-hover:scale-105">
+                      <img
+                        src={char.avatar}
+                        alt={char.name}
+                        className="w-full h-full object-contain drop-shadow"
+                      />
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-zinc-200">
+                      {char.name}
                     </span>
-                    {isTaken && <span className="text-[9px] text-zinc-500">Taken</span>}
+                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
+                      {isTaken ? 'Taken' : isSelected ? 'Selected' : char.tag}
+                    </span>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] text-zinc-500 mt-2">
-              Nagavalli will wear her own shroud. Your skin applies if you are chosen as a Hider.
-            </p>
+
+            <div className="mt-3.5 pt-3 border-t border-zinc-800/80 flex items-center gap-3 text-xs text-zinc-400">
+              <img
+                src="/characters/nagavalli.png"
+                alt="Nagavalli"
+                className="w-7 h-7 object-contain opacity-80"
+              />
+              <span className="text-[11px] font-mono leading-tight">
+                Nagavalli will wear her own ancient shroud. Your chosen character applies if you are assigned as a Hider.
+              </span>
+            </div>
           </div>
         )}
 

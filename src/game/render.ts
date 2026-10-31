@@ -11,6 +11,7 @@ export interface PlayerRenderState {
   isNagavalli: boolean;
   skin: string;
   isCaught: boolean;
+  isMoving?: boolean;
 }
 
 export class SpriteManager {
@@ -20,11 +21,35 @@ export class SpriteManager {
   public preloadAll(): Promise<void> {
     const list = [
       'nagavalli',
+      'nagavalli_f1',
+      'nagavalli_f2',
+      'nagavalli_b1',
+      'nagavalli_b2',
       'hider_1',
+      'hider_1_f1',
+      'hider_1_f2',
+      'hider_1_b1',
+      'hider_1_b2',
       'hider_2',
+      'hider_2_f1',
+      'hider_2_f2',
+      'hider_2_b1',
+      'hider_2_b2',
       'hider_3',
+      'hider_3_f1',
+      'hider_3_f2',
+      'hider_3_b1',
+      'hider_3_b2',
       'hider_4',
+      'hider_4_f1',
+      'hider_4_f2',
+      'hider_4_b1',
+      'hider_4_b2',
       'hider_5',
+      'hider_5_f1',
+      'hider_5_f2',
+      'hider_5_b1',
+      'hider_5_b2',
       'wall',
       'floor',
       'caught_marker',
@@ -168,15 +193,27 @@ export function renderFrame(
       continue;
     }
 
-    const spriteName = p.isNagavalli ? 'nagavalli' : p.skin || 'hider_1';
-    const img = spriteManager.getImage(spriteName);
-    const half = CONFIG.PLAYER_SIZE / 2;
+    const charBase = p.isNagavalli ? 'nagavalli' : p.skin || 'hider_1';
+    // Walk cycle animation: 2 frames alternating every 180 ms when moving; frame 1 when idle
+    const frameNum = p.isMoving ? (Math.floor(timeMs / 180) % 2 === 0 ? '1' : '2') : '1';
+    const cyclePrefix = p.dir === 'up' ? 'b' : 'f'; // b1/b2 for backward (up), f1/f2 for forward (down, left, right)
+    const animSpriteKey = `${charBase}_${cyclePrefix}${frameNum}`;
+
+    const img = spriteManager.getImage(animSpriteKey) || spriteManager.getImage(charBase);
+    const spriteSize = 16; // 16x16 sprite matching maze tile resolution
+    const half = spriteSize / 2;
 
     if (img) {
-      ctx.drawImage(img, p.x - half, p.y - half, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
+      ctx.save();
+      ctx.translate(Math.floor(p.x), Math.floor(p.y));
+      if (p.dir === 'left') {
+        ctx.scale(-1, 1); // Flip horizontally when facing left
+      }
+      ctx.drawImage(img, -half, -half, spriteSize, spriteSize);
+      ctx.restore();
     } else {
       ctx.fillStyle = p.isNagavalli ? '#dc2626' : HIDER_COLORS[p.skin] || '#3b82f6';
-      ctx.fillRect(p.x - half, p.y - half, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
+      ctx.fillRect(p.x - half, p.y - half, spriteSize, spriteSize);
 
       if (p.isNagavalli) {
         // Red glowing eyes
@@ -192,7 +229,7 @@ export function renderFrame(
       ctx.strokeStyle = p.isNagavalli ? 'rgba(239, 68, 68, 0.9)' : 'rgba(56, 189, 248, 0.9)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, CONFIG.PLAYER_SIZE / 2 + 2, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, spriteSize / 2 + 2, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.fillStyle = '#ffffff';

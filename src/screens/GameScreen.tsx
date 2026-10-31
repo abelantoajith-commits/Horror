@@ -12,6 +12,7 @@ interface GameScreenProps {
 export const GameScreen: React.FC<GameScreenProps> = ({
   engine,
   isNagavalli,
+  onForfeit,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [phase, setPhase] = useState<GamePhase>(engine.currentPhase);
@@ -131,15 +132,26 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </span>
         </div>
 
-        {/* Caught Counters */}
-        <div className="flex flex-col items-end">
-          <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
-            Hiders Caught
-          </span>
-          <span className="font-mono text-sm sm:text-base font-bold text-white">
-            <span className="text-red-500 font-black">{caughtCount}</span> /{' '}
-            {engine.totalHidersCount}
-          </span>
+        {/* Caught Counters & Exit */}
+        <div className="flex items-center gap-4 pointer-events-auto">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
+              Hiders Caught
+            </span>
+            <span className="font-mono text-sm sm:text-base font-bold text-white">
+              <span className="text-red-500 font-black">{caughtCount}</span> /{' '}
+              {engine.totalHidersCount}
+            </span>
+          </div>
+          {onForfeit && (
+            <button
+              onClick={onForfeit}
+              className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase rounded bg-zinc-900/90 hover:bg-red-950 text-zinc-400 hover:text-red-300 border border-zinc-800 transition shadow-sm"
+              title="Leave game"
+            >
+              Exit
+            </button>
+          )}
         </div>
       </div>
 

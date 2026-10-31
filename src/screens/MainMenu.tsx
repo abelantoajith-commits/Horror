@@ -6,6 +6,7 @@ interface MainMenuProps {
   onCreateRoom: () => void;
   onJoinRoom: (roomKey: string) => void;
   onJoinTestRoom?: () => void;
+  onInstantNagavalliTest?: () => void;
   errorMessage: string | null;
 }
 
@@ -15,6 +16,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onCreateRoom,
   onJoinRoom,
   onJoinTestRoom,
+  onInstantNagavalliTest,
   errorMessage,
 }) => {
   const [joinKeyInput, setJoinKeyInput] = useState('');
@@ -118,6 +120,23 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </button>
             </form>
           )}
+
+          {/* Instant Solo Test: Play as Nagavalli hunting all randomly placed characters */}
+          <button
+            onClick={() => {
+              if (onInstantNagavalliTest) {
+                onInstantNagavalliTest();
+              }
+            }}
+            className="w-full py-3.5 px-6 bg-gradient-to-r from-red-950 via-red-900 to-red-950 hover:from-red-900 hover:to-red-800 text-red-100 font-black rounded-lg border-2 border-red-500/80 transition-all tracking-wider text-sm flex flex-col items-center justify-center shadow-xl shadow-red-950/60 active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-2 text-base text-red-300 font-mono">
+              <span>⚡</span> TEST (PLAY AS NAGAVALLI)
+            </div>
+            <span className="text-[10px] text-zinc-400 font-mono font-normal">
+              Instant hunt: all characters randomly placed in maze
+            </span>
+          </button>
 
           {/* Dedicated Common Test Lobby Button */}
           <button

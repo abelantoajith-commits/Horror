@@ -172,6 +172,87 @@ export const App: React.FC = () => {
     joinOrCreateRoom('TEST');
   };
 
+  const handleInstantNagavalliTest = () => {
+    // Generate a fresh maze
+    const seed = Math.floor(Math.random() * 1000000);
+    const maze = generateMaze(seed);
+
+    // Player is Nagavalli
+    const nagavalliId = playerId;
+    setIsNagavalli(true);
+
+    // 5 distinct hider characters randomly placed in the maze
+    const testHiders = [
+      { id: 'bot_hider_1', name: 'Player 1', skin: 'hider_1', isNagavalli: false },
+      { id: 'bot_hider_2', name: 'Player 2', skin: 'hider_2', isNagavalli: false },
+      { id: 'bot_hider_3', name: 'Player 3', skin: 'hider_3', isNagavalli: false },
+      { id: 'bot_hider_4', name: 'Player 4', skin: 'hider_4', isNagavalli: false },
+      { id: 'bot_hider_5', name: 'Player 5', skin: 'hider_5', isNagavalli: false },
+    ];
+
+    const hiderIds = testHiders.map((h) => h.id);
+    const spawns = computeSpawns(seed, maze, nagavalliId, hiderIds);
+
+    // Place Player 1 adjacent to Nagavalli (~32-48px away) for immediate catch testing
+    const nagX = spawns[nagavalliId].x;
+    const nagY = spawns[nagavalliId].y;
+    const candidateOffsets = [
+      { dx: 32, dy: 0 },
+      { dx: -32, dy: 0 },
+      { dx: 0, dy: 32 },
+      { dx: 0, dy: -32 },
+      { dx: 48, dy: 0 },
+    ];
+    for (const off of candidateOffsets) {
+      const testX = nagX + off.dx;
+      const testY = nagY + off.dy;
+      if (!checkCollision(maze, testX, testY, CONFIG.PLAYER_SIZE)) {
+        spawns['bot_hider_1'] = { x: testX, y: testY };
+        break;
+      }
+    }
+
+    const playerSummaries = [
+      { id: nagavalliId, name: playerName.trim() || 'Nagavalli', skin: '', isNagavalli: true },
+      ...testHiders,
+    ];
+
+    // Start instantly into chase phase
+    const startAt = Date.now() - (CONFIG.ROLE_REVEAL_SEC + CONFIG.HEAD_START_SEC) * 1000;
+
+    firstCaughtHiderIdRef.current = null;
+    currentNagavalliIdRef.current = nagavalliId;
+    setResultPhoto(null);
+
+    const engine = new GameEngine(
+      maze,
+      nagavalliId,
+      true,
+      spawns,
+      playerSummaries,
+      startAt,
+      {
+        onBroadcastPos: () => {},
+        onCatchHider: (caughtHiderId, order) => {
+          if (order === 1) {
+            firstCaughtHiderIdRef.current = caughtHiderId;
+          }
+        },
+        onLocalCaught: () => {},
+        onNagavalliWin: () => {
+          handleGameEnd('nagavalli');
+        },
+        onHidersWin: () => {
+          handleGameEnd('hiders');
+        },
+      }
+    );
+
+    gameEngineRef.current = engine;
+    setGameEngine(engine);
+    setScreen('game');
+  };
+
   const handleToggleReady = (ready: boolean) => {
     roomRef.current?.updatePresence({ ready });
   };
@@ -372,8 +453,12 @@ export const App: React.FC = () => {
   };
 
   const handleBackToLobby = () => {
-    roomRef.current?.sendBroadcast('back_to_lobby', {});
-    setScreen('lobby');
+    if (roomRef.current) {
+      roomRef.current.sendBroadcast('back_to_lobby', {});
+      setScreen('lobby');
+    } else {
+      setScreen('main_menu');
+    }
     setGameEngine(null);
     setResultPhoto(null);
   };
@@ -398,6 +483,7 @@ export const App: React.FC = () => {
           onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           onJoinTestRoom={handleJoinTestRoom}
+          onInstantNagavalliTest={handleInstantNagavalliTest}
           errorMessage={menuError}
         />
       )}
@@ -417,7 +503,11 @@ export const App: React.FC = () => {
       )}
 
       {screen === 'game' && gameEngine && (
-        <GameScreen engine={gameEngine} isNagavalli={isNagavalli} />
+        <GameScreen
+          engine={gameEngine}
+          isNagavalli={isNagavalli}
+          onForfeit={handleBackToLobby}
+        />
       )}
 
       {screen === 'result' && (
