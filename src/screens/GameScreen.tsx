@@ -21,6 +21,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [spectatingTargetName, setSpectatingTargetName] = useState<string | null>(null);
   const [visibleTarget, setVisibleTarget] = useState<string | null>(null);
   const [caughtSplashActive, setCaughtSplashActive] = useState<boolean>(false);
+  const hasTriggeredCaughtRef = useRef<boolean>(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,7 +36,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       setCaughtCount(engine.caughtHiderIds.size);
 
       // Trigger dramatic caught screen when caught state becomes active
-      if (engine.isCaught && !isLocalCaught) {
+      if (engine.isCaught && !hasTriggeredCaughtRef.current) {
+        hasTriggeredCaughtRef.current = true;
         setIsLocalCaught(true);
         setCaughtSplashActive(true);
         // Show dramatic caught screen for 4.5 seconds before focusing purely on spectator view
@@ -57,7 +59,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       clearInterval(timer);
       engine.detach();
     };
-  }, [engine, isNagavalli, isLocalCaught]);
+  }, [engine, isNagavalli]);
 
   // Handle keyboard shortcut for CATCH (Space or E key)
   useEffect(() => {

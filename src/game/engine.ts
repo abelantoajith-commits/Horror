@@ -155,8 +155,24 @@ export class GameEngine {
   }
 
   public handleRemotePos(pos: PosPayload): void {
-    const remote = this.remotePlayers.get(pos.id);
-    if (remote) {
+    let remote = this.remotePlayers.get(pos.id);
+    if (!remote) {
+      // Auto-register any remote player sending updates so they are never lost
+      remote = {
+        id: pos.id,
+        name: 'Player',
+        skin: 'hider_1',
+        isNagavalli: false,
+        x: pos.x,
+        y: pos.y,
+        targetX: pos.x,
+        targetY: pos.y,
+        dir: pos.dir,
+        isCaught: false,
+        lastUpdated: Date.now(),
+      };
+      this.remotePlayers.set(pos.id, remote);
+    } else {
       remote.targetX = pos.x;
       remote.targetY = pos.y;
       remote.dir = pos.dir;
@@ -303,7 +319,7 @@ export class GameEngine {
   public getVisibleTargetHider(): RemotePlayer | null {
     if (!this.isNagavalli || this.currentPhase !== 'chase') return null;
 
-    const visionRadius = CONFIG.VISION_NAGAVALLI + 4;
+    const visionRadius = CONFIG.VISION_NAGAVALLI + 8;
     let closest: RemotePlayer | null = null;
     let minDist = Infinity;
 

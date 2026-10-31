@@ -164,7 +164,7 @@ export function renderFrame(
     const distToFocus = Math.hypot(p.x - focusPlayer.x, p.y - focusPlayer.y);
 
     // Rule: Do NOT render players outside vision radius
-    if (p.id !== focusPlayer.id && distToFocus > effectiveVisionRadius + 4) {
+    if (p.id !== focusPlayer.id && distToFocus > effectiveVisionRadius + 10) {
       continue;
     }
 

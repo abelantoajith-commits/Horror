@@ -14,6 +14,7 @@ export interface GameStartPayload {
   nagavalliId: string;
   spawns: Record<string, { x: number; y: number }>;
   startAt: number;
+  players?: { id: string; name: string; skin: string }[];
 }
 
 export interface PosPayload {

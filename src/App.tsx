@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   // Networking & Game State
   const roomRef = useRef<RoomConnection | null>(null);
   const [players, setPlayers] = useState<PlayerPresence[]>([]);
+  const playersRef = useRef<PlayerPresence[]>([]);
   const [networkMode, setNetworkMode] = useState<'supabase' | 'local'>('local');
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [gameEngine, setGameEngine] = useState<GameEngine | null>(null);
@@ -101,6 +102,7 @@ export const App: React.FC = () => {
         return p;
       });
 
+      playersRef.current = sanitized;
       setPlayers(sanitized);
     });
 
@@ -151,6 +153,7 @@ export const App: React.FC = () => {
       roomRef.current.leave();
       roomRef.current = null;
     }
+    playersRef.current = [];
     setPlayers([]);
     setGameEngine(null);
     setScreen('main_menu');
@@ -175,24 +178,32 @@ export const App: React.FC = () => {
 
   // Host starts the game
   const handleHostStartGame = () => {
-    if (!roomRef.current || players.length < CONFIG.MIN_PLAYERS) return;
+    const currentList = playersRef.current.length > 0 ? playersRef.current : players;
+    if (!roomRef.current || currentList.length < CONFIG.MIN_PLAYERS) return;
 
     // Pick random Nagavalli
-    const randomIndex = Math.floor(Math.random() * players.length);
-    const chosenNagavalliId = players[randomIndex].playerId;
+    const randomIndex = Math.floor(Math.random() * currentList.length);
+    const chosenNagavalliId = currentList[randomIndex].playerId;
 
     const seed = Math.floor(Math.random() * 1000000);
     const maze = generateMaze(seed);
-    const hiderIds = players.filter((p) => p.playerId !== chosenNagavalliId).map((p) => p.playerId);
+    const hiderIds = currentList.filter((p) => p.playerId !== chosenNagavalliId).map((p) => p.playerId);
     const spawns = computeSpawns(seed, maze, chosenNagavalliId, hiderIds);
 
     const startAt = Date.now() + 1000; // Synchronized start in 1 second
+
+    const playerSummaries = currentList.map((p) => ({
+      id: p.playerId,
+      name: p.name,
+      skin: p.skin,
+    }));
 
     const payload: GameStartPayload = {
       seed,
       nagavalliId: chosenNagavalliId,
       spawns,
       startAt,
+      players: playerSummaries,
     };
 
     roomRef.current.sendBroadcast('game_start', payload);
@@ -210,11 +221,22 @@ export const App: React.FC = () => {
     setIsNagavalli(isLocalNagavalli);
 
     const maze = generateMaze(payload.seed);
-    const playerSummaries = players.map((p) => ({
-      id: p.playerId,
+
+    // Ensure we have all players from payload broadcast or current presence ref
+    const rawList =
+      payload.players && payload.players.length > 0
+        ? payload.players
+        : (playersRef.current.length > 0 ? playersRef.current : players).map((p) => ({
+            id: p.playerId,
+            name: p.name,
+            skin: p.skin,
+          }));
+
+    const playerSummaries = rawList.map((p) => ({
+      id: p.id,
       name: p.name,
       skin: p.skin,
-      isNagavalli: p.playerId === payload.nagavalliId,
+      isNagavalli: p.id === payload.nagavalliId,
     }));
 
     const engine = new GameEngine(
