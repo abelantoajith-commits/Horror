@@ -44,20 +44,25 @@ export interface GameEndPayload {
 export class RoomConnection {
   public roomKey: string;
   public playerId: string;
+  public mode: 'supabase' | 'local';
+  public connectionStatus: 'connecting' | 'connected' | 'error' = 'connecting';
+
   private channel: RealtimeChannel | null = null;
   private localBroadcastChannel: BroadcastChannel | null = null;
   private presenceState: Map<string, PlayerPresence> = new Map();
   private broadcastListeners: Map<string, Set<(payload: any) => void>> = new Map();
   private presenceListeners: Set<(players: PlayerPresence[]) => void> = new Set();
   private hostLeftListeners: Set<() => void> = new Set();
+  private statusListeners: Set<(status: 'connecting' | 'connected' | 'error') => void> = new Set();
   private localPresence: PlayerPresence;
   private fallbackHeartbeatTimer: number | null = null;
   private currentHostId: string | null = null;
   private isDestroyed = false;
 
   constructor(roomKey: string, playerId: string, initialPresence: Omit<PlayerPresence, 'playerId' | 'joinedAt'>) {
-    this.roomKey = roomKey.toUpperCase();
+    this.roomKey = roomKey.trim().toUpperCase();
     this.playerId = playerId;
+    this.mode = isSupabaseConfigured ? 'supabase' : 'local';
     this.localPresence = {
       ...initialPresence,
       playerId,
@@ -69,7 +74,8 @@ export class RoomConnection {
   public async connect(): Promise<void> {
     if (this.isDestroyed) return;
 
-    if (isSupabaseConfigured && supabase) {
+    if (this.mode === 'supabase' && supabase) {
+      console.log(`[Room] Connecting to Supabase Realtime channel room:${this.roomKey}`);
       this.channel = supabase.channel(`room:${this.roomKey}`, {
         config: {
           broadcast: { self: false },
@@ -77,33 +83,73 @@ export class RoomConnection {
         },
       });
 
+      const handlePresenceSync = () => {
+        if (this.isDestroyed || !this.channel) return;
+        const state = this.channel.presenceState<PlayerPresence>();
+        const updated: PlayerPresence[] = [];
+
+        for (const key of Object.keys(state)) {
+          const list = state[key];
+          if (list && list.length > 0) {
+            updated.push(list[list.length - 1]);
+          }
+        }
+
+        this.handlePresenceUpdate(updated);
+      };
+
+      // Listen to all presence state changes
       this.channel
         .on('presence', { event: 'sync' }, () => {
-          if (this.isDestroyed || !this.channel) return;
-          const state = this.channel.presenceState<PlayerPresence>();
-          const updated: PlayerPresence[] = [];
-
-          for (const key of Object.keys(state)) {
-            const list = state[key];
-            if (list && list.length > 0) {
-              updated.push(list[list.length - 1]);
-            }
-          }
-
-          this.handlePresenceUpdate(updated);
+          handlePresenceSync();
         })
-        .on('broadcast', { event: '*' }, ({ event, payload }) => {
-          if (this.isDestroyed) return;
-          this.triggerBroadcast(event, payload);
+        .on('presence', { event: 'join' }, () => {
+          handlePresenceSync();
+        })
+        .on('presence', { event: 'leave' }, () => {
+          handlePresenceSync();
         });
 
-      await this.channel.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED' && !this.isDestroyed && this.channel) {
-          await this.channel.track(this.localPresence);
+      // Explicitly register listeners for known game events and wildcard
+      const gameEvents = ['game_start', 'pos', 'caught', 'photo', 'game_end', 'back_to_lobby', '*'];
+      for (const ev of gameEvents) {
+        this.channel.on('broadcast', { event: ev }, (resp: any) => {
+          if (this.isDestroyed) return;
+          const actualEvent = resp.event || ev;
+          const actualPayload = resp.payload !== undefined ? resp.payload : resp;
+          this.triggerBroadcast(actualEvent, actualPayload);
+        });
+      }
+
+      this.channel.subscribe(async (status, err) => {
+        console.log(`[Room ${this.roomKey}] Subscription status:`, status, err || '');
+        if (status === 'SUBSCRIBED') {
+          this.connectionStatus = 'connected';
+          this.notifyStatus('connected');
+          if (!this.isDestroyed && this.channel) {
+            try {
+              const res = await this.channel.track(this.localPresence);
+              console.log(`[Room ${this.roomKey}] Track response:`, res);
+            } catch (trackErr) {
+              console.error(`[Room ${this.roomKey}] Error tracking presence:`, trackErr);
+            }
+          }
+        } else if (status === 'CHANNEL_ERROR') {
+          this.connectionStatus = 'error';
+          this.notifyStatus('error');
+          console.error(`[Room ${this.roomKey}] Supabase channel error:`, err);
+        } else if (status === 'TIMED_OUT') {
+          this.connectionStatus = 'error';
+          this.notifyStatus('error');
+          console.warn(`[Room ${this.roomKey}] Supabase channel timed out`);
         }
       });
     } else {
       // Local fallback using native BroadcastChannel
+      console.log(`[Room] Using local BroadcastChannel fallback for room:${this.roomKey}`);
+      this.connectionStatus = 'connected';
+      this.notifyStatus('connected');
+
       const channelName = `nagavalli_room_${this.roomKey}`;
       this.localBroadcastChannel = new BroadcastChannel(channelName);
 
@@ -144,11 +190,11 @@ export class RoomConnection {
   }
 
   private handlePresenceUpdate(players: PlayerPresence[]) {
-    // Keep local presence included
     this.presenceState.clear();
     for (const p of players) {
       this.presenceState.set(p.playerId, p);
     }
+    // Always preserve local player
     if (!this.presenceState.has(this.playerId)) {
       this.presenceState.set(this.playerId, this.localPresence);
     }
@@ -158,11 +204,10 @@ export class RoomConnection {
   private notifyPresence() {
     const players = Array.from(this.presenceState.values()).sort((a, b) => a.joinedAt - b.joinedAt);
 
-    // Host check
+    // Host detection
     if (players.length > 0) {
       const newHostId = players[0].playerId;
       if (this.currentHostId && this.currentHostId !== newHostId && !this.presenceState.has(this.currentHostId)) {
-        // Old host left
         for (const cb of this.hostLeftListeners) {
           cb();
         }
@@ -175,13 +220,23 @@ export class RoomConnection {
     }
   }
 
+  private notifyStatus(status: 'connecting' | 'connected' | 'error') {
+    for (const listener of this.statusListeners) {
+      listener(status);
+    }
+  }
+
   public async updatePresence(partial: Partial<PlayerPresence>): Promise<void> {
     this.localPresence = { ...this.localPresence, ...partial };
     this.presenceState.set(this.playerId, this.localPresence);
     this.notifyPresence();
 
-    if (this.channel && isSupabaseConfigured) {
-      await this.channel.track(this.localPresence);
+    if (this.channel && this.mode === 'supabase') {
+      try {
+        await this.channel.track(this.localPresence);
+      } catch (err) {
+        console.error('[Room] Error updating presence:', err);
+      }
     } else if (this.localBroadcastChannel) {
       this.localBroadcastChannel.postMessage({
         _type: 'presence_ping',
@@ -191,12 +246,19 @@ export class RoomConnection {
   }
 
   public async sendBroadcast(event: string, payload: any): Promise<void> {
-    if (this.channel && isSupabaseConfigured) {
-      await this.channel.send({
-        type: 'broadcast',
-        event,
-        payload,
-      });
+    if (this.channel && this.mode === 'supabase') {
+      try {
+        const res = await this.channel.send({
+          type: 'broadcast',
+          event,
+          payload,
+        });
+        if (res !== 'ok') {
+          console.warn('[Room] Supabase broadcast send result:', res, event);
+        }
+      } catch (err) {
+        console.error('[Room] Broadcast send error:', err);
+      }
     } else if (this.localBroadcastChannel) {
       this.localBroadcastChannel.postMessage({
         _type: 'broadcast',
@@ -217,10 +279,18 @@ export class RoomConnection {
   }
 
   private triggerBroadcast(event: string, payload: any) {
+    // Exact match listeners
     const listeners = this.broadcastListeners.get(event);
     if (listeners) {
       for (const cb of listeners) {
         cb(payload);
+      }
+    }
+    // Wildcard listeners
+    const allListeners = this.broadcastListeners.get('*');
+    if (allListeners) {
+      for (const cb of allListeners) {
+        cb({ event, payload });
       }
     }
   }
@@ -230,6 +300,14 @@ export class RoomConnection {
     callback(Array.from(this.presenceState.values()).sort((a, b) => a.joinedAt - b.joinedAt));
     return () => {
       this.presenceListeners.delete(callback);
+    };
+  }
+
+  public onStatusChange(callback: (status: 'connecting' | 'connected' | 'error') => void): () => void {
+    this.statusListeners.add(callback);
+    callback(this.connectionStatus);
+    return () => {
+      this.statusListeners.delete(callback);
     };
   }
 
@@ -255,14 +333,14 @@ export class RoomConnection {
       this.localBroadcastChannel = null;
     }
     if (this.channel) {
-      this.channel.untrack();
-      this.channel.unsubscribe();
+      this.channel.untrack().catch(() => {});
+      this.channel.unsubscribe().catch(() => {});
       this.channel = null;
     }
     this.presenceState.clear();
     this.broadcastListeners.clear();
     this.presenceListeners.clear();
     this.hostLeftListeners.clear();
+    this.statusListeners.clear();
   }
 }
-

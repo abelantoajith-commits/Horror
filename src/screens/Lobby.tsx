@@ -6,6 +6,8 @@ interface LobbyProps {
   roomKey: string;
   localPlayerId: string;
   players: PlayerPresence[];
+  networkMode?: 'supabase' | 'local';
+  connectionStatus?: 'connecting' | 'connected' | 'error';
   onToggleReady: (ready: boolean) => void;
   onSelectSkin: (skin: string) => void;
   onStartGame: () => void;
@@ -24,6 +26,8 @@ export const Lobby: React.FC<LobbyProps> = ({
   roomKey,
   localPlayerId,
   players,
+  networkMode = 'local',
+  connectionStatus = 'connected',
   onToggleReady,
   onSelectSkin,
   onStartGame,
@@ -51,6 +55,22 @@ export const Lobby: React.FC<LobbyProps> = ({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black text-gray-200 select-none">
       <div className="max-w-2xl w-full bg-[#0d0d12] border border-zinc-800 rounded-xl p-8 shadow-2xl">
+        {/* Network status banner */}
+        {networkMode === 'local' ? (
+          <div className="mb-4 p-2.5 rounded bg-amber-950/40 border border-amber-800/60 text-xs text-amber-300 flex items-center justify-between">
+            <span>
+              ⚠️ <strong>Local Tab Mode:</strong> Syncing across tabs in the same browser. For cross-device multiplayer across the internet, Supabase credentials must be active.
+            </span>
+          </div>
+        ) : (
+          <div className="mb-4 p-2 rounded bg-emerald-950/30 border border-emerald-900/50 text-[11px] font-mono text-emerald-400 flex items-center justify-between">
+            <span>● <strong>Connected to Supabase Realtime</strong> (Global cross-device multiplayer active)</span>
+            <span className="uppercase text-[9px] px-1.5 py-0.5 bg-emerald-900/60 rounded">
+              {connectionStatus}
+            </span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-center justify-between border-b border-zinc-800 pb-6 mb-6 gap-4">
           <div>

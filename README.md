@@ -45,11 +45,16 @@ A real-time multiplayer horror hide-and-seek browser game built with **React 18 
 
 ## 4. Environment Variables
 
-Create `.env.local` in the project root (or copy from `.env.example`):
+Create `.env.local` in the project root (or copy from `.env.example`). Both `VITE_` and `NEXT_PUBLIC_` prefixes are supported:
 
 ```bash
+# Option A (Standard Vite prefix):
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Option B (Next.js / Vercel default prefix):
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 ---

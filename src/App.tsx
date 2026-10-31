@@ -29,6 +29,8 @@ export const App: React.FC = () => {
   // Networking & Game State
   const roomRef = useRef<RoomConnection | null>(null);
   const [players, setPlayers] = useState<PlayerPresence[]>([]);
+  const [networkMode, setNetworkMode] = useState<'supabase' | 'local'>('local');
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [gameEngine, setGameEngine] = useState<GameEngine | null>(null);
   const [isNagavalli, setIsNagavalli] = useState(false);
 
@@ -72,6 +74,12 @@ export const App: React.FC = () => {
 
     roomRef.current = connection;
     setRoomKey(key);
+    setNetworkMode(connection.mode);
+    setConnectionStatus(connection.connectionStatus);
+
+    connection.onStatusChange((status) => {
+      setConnectionStatus(status);
+    });
 
     // Setup room listeners
     connection.onPresenceSync((playerList) => {
@@ -333,6 +341,8 @@ export const App: React.FC = () => {
           roomKey={roomKey}
           localPlayerId={playerId}
           players={players}
+          networkMode={networkMode}
+          connectionStatus={connectionStatus}
           onToggleReady={handleToggleReady}
           onSelectSkin={handleSelectSkin}
           onStartGame={handleHostStartGame}
