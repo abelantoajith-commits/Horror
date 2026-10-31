@@ -300,6 +300,43 @@ export class GameEngine {
     }
   }
 
+  public getVisibleTargetHider(): RemotePlayer | null {
+    if (!this.isNagavalli || this.currentPhase !== 'chase') return null;
+
+    const visionRadius = CONFIG.VISION_NAGAVALLI + 4;
+    let closest: RemotePlayer | null = null;
+    let minDist = Infinity;
+
+    for (const hider of this.remotePlayers.values()) {
+      if (!hider.isNagavalli && !hider.isCaught && !this.caughtHiderIds.has(hider.id)) {
+        const dist = Math.hypot(this.localX - hider.x, this.localY - hider.y);
+        if (dist <= visionRadius && dist < minDist) {
+          minDist = dist;
+          closest = hider;
+        }
+      }
+    }
+    return closest;
+  }
+
+  public catchVisibleHider(): boolean {
+    if (!this.isNagavalli || this.currentPhase !== 'chase') return false;
+
+    const target = this.getVisibleTargetHider();
+    if (!target) return false;
+
+    this.caughtHiderIds.add(target.id);
+    target.isCaught = true;
+    const order = this.caughtHiderIds.size;
+    this.callbacks.onCatchHider(target.id, order);
+
+    if (this.caughtHiderIds.size >= this.totalHidersCount && !this.hasReportedNagavalliWin) {
+      this.hasReportedNagavalliWin = true;
+      this.callbacks.onNagavalliWin();
+    }
+    return true;
+  }
+
   private checkCatches() {
     // Only Nagavalli checks catches during chase phase
     if (!this.isNagavalli || this.currentPhase !== 'chase') return;

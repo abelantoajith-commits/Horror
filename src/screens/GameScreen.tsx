@@ -19,6 +19,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [caughtCount, setCaughtCount] = useState<number>(0);
   const [isLocalCaught, setIsLocalCaught] = useState<boolean>(engine.isCaught);
   const [spectatingTargetName, setSpectatingTargetName] = useState<string | null>(null);
+  const [visibleTarget, setVisibleTarget] = useState<string | null>(null);
+  const [caughtSplashActive, setCaughtSplashActive] = useState<boolean>(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -31,18 +33,53 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       setPhase(currentP);
       setTimeRemaining(Math.ceil(seconds));
       setCaughtCount(engine.caughtHiderIds.size);
-      setIsLocalCaught(engine.isCaught);
+
+      // Trigger dramatic caught screen when caught state becomes active
+      if (engine.isCaught && !isLocalCaught) {
+        setIsLocalCaught(true);
+        setCaughtSplashActive(true);
+        // Show dramatic caught screen for 4.5 seconds before focusing purely on spectator view
+        setTimeout(() => setCaughtSplashActive(false), 4500);
+      }
 
       if (engine.isCaught && engine.spectatingTargetId) {
         setSpectatingTargetName(engine.spectatingTargetId);
       }
-    }, 200);
+
+      // Check if any uncaught hider is visible in Nagavalli's light circle
+      if (isNagavalli) {
+        const target = engine.getVisibleTargetHider();
+        setVisibleTarget(target ? target.name : null);
+      }
+    }, 100);
 
     return () => {
       clearInterval(timer);
       engine.detach();
     };
-  }, [engine]);
+  }, [engine, isNagavalli, isLocalCaught]);
+
+  // Handle keyboard shortcut for CATCH (Space or E key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isNagavalli && phase === 'chase' && (e.code === 'Space' || e.code === 'KeyE')) {
+        const target = engine.getVisibleTargetHider();
+        if (target) {
+          e.preventDefault();
+          engine.catchVisibleHider();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [engine, isNagavalli, phase]);
+
+  const handleCatchClick = () => {
+    if (isNagavalli && phase === 'chase') {
+      engine.catchVisibleHider();
+    }
+  };
 
   // Format mm:ss
   const formatTimer = (sec: number) => {
@@ -113,16 +150,53 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           className="pixelated w-full h-full object-contain rounded-md shadow-2xl shadow-red-950/20 border border-zinc-900"
         />
 
-        {/* Caught / Spectator Overlay */}
-        {isLocalCaught && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-red-950/80 border border-red-700/80 backdrop-blur-sm px-6 py-2.5 rounded-full text-center shadow-lg pointer-events-none">
+        {/* DRAMATIC CAUGHT SCREEN OVERLAY (Flashes when caught) */}
+        {isLocalCaught && caughtSplashActive && (
+          <div className="absolute inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+            <div className="max-w-md w-full bg-red-950/95 border-2 border-red-600 rounded-2xl p-8 shadow-[0_0_60px_rgba(220,38,38,0.7)] backdrop-blur-md">
+              <h2 className="text-4xl sm:text-5xl font-black text-red-500 tracking-widest drop-shadow-[0_0_20px_rgba(220,38,38,1)] animate-bounce mb-3">
+                YOU WERE CAUGHT!
+              </h2>
+              <p className="text-sm font-mono text-red-200 mb-6 leading-relaxed">
+                Nagavalli found you in the dark. Your photo has been captured.
+              </p>
+              <div className="p-4 bg-black/80 rounded-xl border border-red-900 text-xs font-mono text-zinc-300">
+                <span className="text-amber-400 font-bold block mb-1">SPECTATOR MODE ACTIVE</span>
+                <span>Press <strong className="text-white">[Tab]</strong> or <strong className="text-white">[← / →]</strong> to spectate other players</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Persistent Caught / Spectator Bottom Badge */}
+        {isLocalCaught && !caughtSplashActive && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-red-950/90 border border-red-700/80 backdrop-blur-sm px-6 py-2.5 rounded-full text-center shadow-lg pointer-events-none">
             <p className="text-xs font-mono font-bold text-red-300">
-              YOU WERE CAUGHT • SPECTATING{' '}
-              {spectatingTargetName ? `PLAYER` : ''}
+              YOU WERE CAUGHT • SPECTATING {spectatingTargetName ? 'PLAYER' : ''}
             </p>
             <p className="text-[10px] font-mono text-zinc-400">
               Press [Tab] or [← / →] to switch player
             </p>
+          </div>
+        )}
+
+        {/* NAGAVALLI CATCH BUTTON (Activates only when an uncaught hider is visible) */}
+        {isNagavalli && phase === 'chase' && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5">
+            <button
+              onClick={handleCatchClick}
+              disabled={!visibleTarget}
+              className={`px-8 py-3.5 sm:px-10 sm:py-4 rounded-xl font-black text-sm sm:text-base tracking-widest uppercase transition-all duration-150 select-none ${
+                visibleTarget
+                  ? 'bg-red-600 hover:bg-red-500 active:scale-95 text-white border-2 border-red-300 shadow-[0_0_30px_rgba(220,38,38,0.9)] animate-pulse cursor-pointer'
+                  : 'bg-zinc-900/80 text-zinc-600 border border-zinc-800 cursor-not-allowed opacity-40'
+              }`}
+            >
+              {visibleTarget ? `⚡ CATCH ${visibleTarget.toUpperCase()}!` : 'CATCH (NO VICTIM IN SIGHT)'}
+            </button>
+            <span className="text-[11px] font-mono text-zinc-400">
+              {visibleTarget ? 'Click button or press [SPACE] to catch' : 'Approach a player to reveal them'}
+            </span>
           </div>
         )}
       </div>
@@ -135,4 +209,3 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     </div>
   );
 };
-
