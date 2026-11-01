@@ -121,3 +121,4 @@ for char_key, folder_name in char_folders:
         spr.save(os.path.join(PUBLIC_SPRITE_DIR, f"{char_key}.png"), format='PNG', optimize=True)
 
 print("\nDone! All sprites processed successfully.")
+

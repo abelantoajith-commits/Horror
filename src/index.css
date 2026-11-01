@@ -3,11 +3,24 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    background-color: #050507;
-    color: #e2e8f0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #131411;
+    color: #e5e2dd;
+    font-family: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior: none;
   }
+  main > :first-child {
+    margin-top: 0 !important;
+  }
+  main > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
 
 .pixelated {
@@ -30,6 +43,5 @@
 /* Custom horror vignette and photo styling */
 .horror-photo {
   filter: contrast(1.3) brightness(0.9) sepia(0.3) saturate(1.4);
-  box-shadow: inset 0 0 40px rgba(136, 8, 8, 0.8), 0 0 20px rgba(220, 38, 38, 0.4);
+  box-shadow: inset 0 0 40px rgba(100, 30, 43, 0.8), 0 0 20px rgba(227, 194, 132, 0.4);
 }
-

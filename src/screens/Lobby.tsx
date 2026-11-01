@@ -23,11 +23,11 @@ export interface CharacterInfo {
 }
 
 export const AVAILABLE_CHARACTERS: CharacterInfo[] = [
-  { id: 'hider_1', name: 'Player 1', avatar: '/characters/player_1.png', tag: 'Survivor', color: '#3b82f6' },
-  { id: 'hider_2', name: 'Player 2', avatar: '/characters/player_2.png', tag: 'Shadow', color: '#10b981' },
-  { id: 'hider_3', name: 'Player 3', avatar: '/characters/player_3.png', tag: 'Ghost', color: '#f59e0b' },
-  { id: 'hider_4', name: 'Player 4', avatar: '/characters/player_4.png', tag: 'Seeker', color: '#ec4899' },
-  { id: 'hider_5', name: 'Player 5', avatar: '/characters/player_5.png', tag: 'Scout', color: '#8b5cf6' },
+  { id: 'hider_1', name: 'Nakulan', avatar: '/characters/player_1.png', tag: 'Scholar', color: '#e3c284' },
+  { id: 'hider_2', name: 'Ganga', avatar: '/characters/player_2.png', tag: 'Damsel', color: '#ffb2ba' },
+  { id: 'hider_3', name: 'Sunny', avatar: '/characters/player_3.png', tag: 'Psychiatrist', color: '#b7cbbf' },
+  { id: 'hider_4', name: 'Mahadevan', avatar: '/characters/player_4.png', tag: 'Poet', color: '#d4b477' },
+  { id: 'hider_5', name: 'Alli', avatar: '/characters/player_5.png', tag: 'Servant', color: '#91a599' },
 ];
 
 export const Lobby: React.FC<LobbyProps> = ({
@@ -63,247 +63,260 @@ export const Lobby: React.FC<LobbyProps> = ({
   const canStart = isHost && playerCount >= minRequired && playerCount <= CONFIG.MAX_PLAYERS && allReady;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black text-gray-200 select-none">
-      <div className="max-w-2xl w-full bg-[#0d0d12] border border-zinc-800 rounded-xl p-8 shadow-2xl">
-        {/* Special Common Test Lobby Banner */}
-        {isTestRoom && (
-          <div className="mb-4 p-3 rounded-lg bg-purple-950/60 border border-purple-600/80 text-xs text-purple-200 flex items-center justify-between shadow-lg shadow-purple-950/40">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🧪</span>
-              <span>
-                <strong>COMMON TESTING LOBBY:</strong> All users who click Test connect here with a shared host. (Test mode can start with 1+ players).
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-6 pt-20 bg-[#0e0e0b] text-[#e5e2dd] overflow-x-hidden select-none">
+      {/* 2D Illustrated Kerala Tharavadu Courtyard Background */}
+      <div
+        className="absolute inset-0 bg-cover bg-center filter brightness-[0.38] contrast-[1.15] scale-105"
+        style={{ backgroundImage: `url('/tharavadu_night.jpg')` }}
+      />
+
+      {/* Atmospheric Lighting & Shadows */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#d99b51]/15 rounded-full blur-[140px]" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#641e2b]/15 rounded-full blur-[120px]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e0b] via-[#0e0e0b]/75 to-[#0e0e0b]/60" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_#0e0e0b_90%)]" />
+      </div>
+
+      <div className="relative z-10 max-w-4xl w-full my-6">
+        {/* Decorative Ornate Antique Brass Corners */}
+        <div className="absolute -top-3.5 -left-3.5 w-10 h-10 border-t-2 border-l-2 border-[#e3c284] z-20 pointer-events-none drop-shadow-[0_0_8px_rgba(227,194,132,0.4)]" />
+        <div className="absolute -top-3.5 -right-3.5 w-10 h-10 border-t-2 border-r-2 border-[#e3c284] z-20 pointer-events-none drop-shadow-[0_0_8px_rgba(227,194,132,0.4)]" />
+        <div className="absolute -bottom-3.5 -left-3.5 w-10 h-10 border-b-2 border-l-2 border-[#e3c284] z-20 pointer-events-none drop-shadow-[0_0_8px_rgba(227,194,132,0.4)]" />
+        <div className="absolute -bottom-3.5 -right-3.5 w-10 h-10 border-b-2 border-r-2 border-[#e3c284] z-20 pointer-events-none drop-shadow-[0_0_8px_rgba(227,194,132,0.4)]" />
+
+        {/* Main Lobby Container */}
+        <div className="bg-[#181714]/94 border border-[#e3c284]/35 rounded-xl p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-md relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#e3c284]/60 to-transparent" />
+          {/* Test Room Alert */}
+          {isTestRoom && (
+            <div className="mb-6 p-3 rounded-lg bg-secondary-container/60 border border-secondary text-on-secondary-container flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="material-symbols-outlined text-secondary">science</span>
+                <span>
+                  <strong>COMMON TESTING LOBBY:</strong> All test sessions connect here. Solo launch permitted.
+                </span>
+              </div>
+              <span className="px-2 py-0.5 bg-secondary text-on-secondary text-[11px] font-label-sm uppercase rounded">
+                TEST MODE
               </span>
             </div>
-            <span className="px-2 py-0.5 bg-purple-800/80 text-[10px] font-mono rounded font-bold uppercase tracking-wider">
-              TEST MODE
-            </span>
-          </div>
-        )}
+          )}
 
-        {/* Network status banner */}
-        {networkMode === 'local' ? (
-          <div className="mb-4 p-2.5 rounded bg-amber-950/40 border border-amber-800/60 text-xs text-amber-300 flex items-center justify-between">
-            <span>
-              ⚠️ <strong>Local Tab Mode:</strong> Syncing across tabs in the same browser. For cross-device multiplayer across the internet, Supabase credentials must be active.
-            </span>
-          </div>
-        ) : (
-          <div className="mb-4 p-2 rounded bg-emerald-950/30 border border-emerald-900/50 text-[11px] font-mono text-emerald-400 flex items-center justify-between">
-            <span>● <strong>Connected to Supabase Realtime</strong> (Global cross-device multiplayer active)</span>
-            <span className="uppercase text-[9px] px-1.5 py-0.5 bg-emerald-900/60 rounded">
-              {connectionStatus}
-            </span>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between border-b border-zinc-800 pb-6 mb-6 gap-4">
-          <div>
-            <h2 className="text-2xl font-black tracking-widest text-red-600">
-              ROOM LOBBY
-            </h2>
-            <p className="text-xs text-zinc-400">
-              Gather 3 to 5 players to begin the hunt
-            </p>
-          </div>
-
-          {/* Room Key & Copy */}
-          <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-4 py-2 rounded-lg">
+          {/* Top Bar / Room Header */}
+          <div className="flex flex-col sm:flex-row items-center justify-between border-b border-outline-variant/30 pb-6 mb-6 gap-4">
             <div>
-              <span className="text-[10px] uppercase text-zinc-500 font-bold block">Room Code</span>
-              <span className="text-xl font-mono font-bold tracking-widest text-red-400">{roomKey}</span>
+              <span className="text-label-sm uppercase tracking-widest text-secondary block mb-1">
+                Sanctuary Assembled
+              </span>
+              <div className="flex items-center gap-3">
+                <h2 className="font-headline-md text-on-surface">
+                  Room <span className="text-secondary">#{roomKey}</span>
+                </h2>
+                <button
+                  onClick={handleCopyKey}
+                  className="px-3 py-1 bg-surface-container-high hover:bg-surface-bright text-secondary border border-secondary/30 rounded-lg text-xs font-label-md flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                  {copied ? 'Copied' : 'Copy Code'}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleCopyKey}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold rounded text-zinc-200 transition"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-        </div>
 
-        {/* Player Slots (5 max) */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-xs uppercase font-bold tracking-wider text-zinc-400">
-              Players ({playerCount} / {CONFIG.MAX_PLAYERS})
-            </span>
-            <span className="text-xs text-zinc-500">
-              {playerCount < CONFIG.MIN_PLAYERS
-                ? `Need ${CONFIG.MIN_PLAYERS - playerCount} more player${CONFIG.MIN_PLAYERS - playerCount > 1 ? 's' : ''}`
-                : 'Player count reached minimum'}
-            </span>
+            <div className="flex items-center gap-4">
+              {networkMode === 'local' ? (
+                <div className="px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant/40 text-xs text-on-surface-variant flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                  <span>Local Browser Sync</span>
+                </div>
+              ) : (
+                <div className="px-3 py-1.5 rounded-lg bg-surface-container border border-secondary/30 text-xs text-secondary flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span>Supabase Realtime ({connectionStatus})</span>
+                </div>
+              )}
+
+              <div className="px-3 py-1.5 rounded-lg bg-surface-container-high border border-outline-variant/30 text-xs font-label-md text-on-surface">
+                Players ({playerCount} / {CONFIG.MAX_PLAYERS})
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2.5">
-            {Array.from({ length: CONFIG.MAX_PLAYERS }).map((_, index) => {
-              const player = players[index];
-              if (player) {
-                const isLocal = player.playerId === localPlayerId;
-                const isThisHost = index === 0;
-                const charInfo = AVAILABLE_CHARACTERS.find((c) => c.id === player.skin) || AVAILABLE_CHARACTERS[0];
+          {/* Bento Grid: Left Roster (5 cols) + Right Avatar Select (7 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            {/* Left: Gathered Investigators */}
+            <div className="lg:col-span-5 flex flex-col gap-3">
+              <h3 className="font-headline-sm text-sm uppercase tracking-wider text-secondary flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">group</span>
+                Investigators in Courtyard
+              </h3>
 
-                return (
-                  <div
-                    key={player.playerId}
-                    className={`flex items-center justify-between p-3.5 rounded-lg border transition ${
-                      isLocal
-                        ? 'bg-zinc-900/90 border-red-900/60'
-                        : 'bg-zinc-900/40 border-zinc-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-950 flex items-center justify-center shadow-md">
-                        <img
-                          src={charInfo.avatar}
-                          alt={charInfo.name}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div>
-                        <span className="font-mono text-sm font-semibold text-white block">
-                          {player.name}
-                          {isLocal && <span className="text-xs text-red-400 ml-2">(You)</span>}
-                          {isThisHost && <span className="text-xs text-amber-400 ml-2">[Host]</span>}
-                        </span>
-                        <span className="text-[10px] font-mono text-zinc-500">
-                          Playing as {charInfo.name}
-                        </span>
-                      </div>
-                    </div>
+              <div className="space-y-2.5">
+                {players.map((p, idx) => {
+                  const isMe = p.playerId === localPlayerId;
+                  const isHostPlayer = idx === 0;
+                  const char = AVAILABLE_CHARACTERS.find((c) => c.id === p.skin) || AVAILABLE_CHARACTERS[0];
 
-                    <div className="flex items-center gap-2">
+                  return (
+                    <div
+                      key={p.playerId}
+                      className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                        isMe
+                          ? 'bg-surface-container-high/90 border-secondary/50 shadow-md'
+                          : 'bg-surface-container/70 border-outline-variant/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-secondary/40 bg-surface-container-lowest shrink-0">
+                          <img src={char.avatar} alt={char.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-label-md text-on-surface text-sm">{p.name}</span>
+                            {isMe && (
+                              <span className="text-[10px] uppercase font-bold text-secondary bg-secondary/10 px-1 rounded">
+                                You
+                              </span>
+                            )}
+                            {isHostPlayer && (
+                              <span
+                                className="material-symbols-outlined text-secondary text-sm"
+                                title="Sanctuary Host"
+                              >
+                                stars
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-on-surface-variant block">
+                            {char.name} • {char.tag}
+                          </span>
+                        </div>
+                      </div>
+
                       <span
-                        className={`text-xs font-mono px-2.5 py-1 rounded font-bold uppercase ${
-                          player.ready
-                            ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
-                            : 'bg-zinc-800 text-zinc-400'
+                        className={`text-[11px] font-label-sm uppercase px-2.5 py-1 rounded-full ${
+                          p.ready
+                            ? 'bg-secondary-container text-on-secondary-container font-bold border border-secondary/40'
+                            : 'bg-surface-variant/80 text-on-surface-variant'
                         }`}
                       >
-                        {player.ready ? 'Ready' : 'Not Ready'}
+                        {p.ready ? 'Prepared' : 'Waiting'}
                       </span>
                     </div>
-                  </div>
-                );
-              }
+                  );
+                })}
 
-              return (
-                <div
-                  key={`slot-${index}`}
-                  className="p-3.5 rounded-lg border border-dashed border-zinc-800/80 bg-zinc-950/40 text-zinc-600 text-sm font-mono flex items-center justify-between"
-                >
-                  <span>Slot {index + 1}</span>
-                  <span className="text-xs text-zinc-600">Waiting for player...</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Character Selection for Local Player */}
-        {localPlayer && (
-          <div className="mb-6 p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl">
-            <div className="flex items-center justify-between mb-3">
-              <span className="block text-xs uppercase font-bold tracking-wider text-zinc-300">
-                Choose Your Character
-              </span>
-              <span className="text-[11px] font-mono text-zinc-500">
-                Selected: <strong className="text-red-400">{AVAILABLE_CHARACTERS.find((c) => c.id === localPlayer.skin)?.name || 'Player 1'}</strong>
-              </span>
-            </div>
-
-            <div className="grid grid-cols-5 gap-2.5">
-              {AVAILABLE_CHARACTERS.map((char) => {
-                const isSelected = localPlayer.skin === char.id;
-                const isTaken = takenSkins.has(char.id);
-
-                return (
-                  <button
-                    key={char.id}
-                    disabled={isTaken}
-                    onClick={() => onSelectSkin(char.id)}
-                    className={`group relative flex flex-col items-center p-2 rounded-xl border transition-all duration-150 ${
-                      isSelected
-                        ? 'border-red-500 bg-red-950/40 shadow-[0_0_15px_rgba(239,68,68,0.35)] scale-[1.02]'
-                        : isTaken
-                        ? 'border-zinc-800/80 bg-zinc-950/40 opacity-30 cursor-not-allowed'
-                        : 'border-zinc-800 bg-zinc-900/80 hover:border-zinc-600 hover:bg-zinc-800/90'
-                    }`}
+                {/* Empty slots placeholders */}
+                {Array.from({ length: Math.max(0, CONFIG.MAX_PLAYERS - players.length) }).map((_, i) => (
+                  <div
+                    key={`empty_${i}`}
+                    className="p-3 rounded-lg border border-dashed border-outline-variant/30 bg-surface-container/20 flex items-center justify-center text-xs text-on-surface-variant/40 italic"
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden flex items-center justify-center mb-1 transition-transform group-hover:scale-105">
-                      <img
-                        src={char.avatar}
-                        alt={char.name}
-                        className="w-full h-full object-contain drop-shadow"
-                      />
-                    </div>
-                    <span className="text-[11px] font-mono font-bold text-zinc-200">
-                      {char.name}
-                    </span>
-                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
-                      {isTaken ? 'Taken' : isSelected ? 'Selected' : char.tag}
-                    </span>
-                  </button>
-                );
-              })}
+                    Awaiting investigator #{players.length + i + 1}...
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="mt-3.5 pt-3 border-t border-zinc-800/80 flex items-center gap-3 text-xs text-zinc-400">
-              <img
-                src="/characters/nagavalli.png"
-                alt="Nagavalli"
-                className="w-7 h-7 object-contain opacity-80"
-              />
-              <span className="text-[11px] font-mono leading-tight">
-                Nagavalli will wear her own ancient shroud. Your chosen character applies if you are assigned as a Hider.
-              </span>
+            {/* Right: Character / Avatar Selection */}
+            <div className="lg:col-span-7 flex flex-col gap-3">
+              <h3 className="font-headline-sm text-sm uppercase tracking-wider text-secondary flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">badge</span>
+                Select Investigator Avatar
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {AVAILABLE_CHARACTERS.map((char) => {
+                  const isSelected = localPlayer?.skin === char.id;
+                  const isTaken = takenSkins.has(char.id);
+
+                  return (
+                    <button
+                      key={char.id}
+                      onClick={() => !isTaken && onSelectSkin(char.id)}
+                      disabled={isTaken}
+                      className={`relative flex flex-col items-center p-3 rounded-xl border transition-all text-center cursor-pointer ${
+                        isSelected
+                          ? 'bg-secondary-container/40 border-secondary ring-2 ring-secondary/50 shadow-lg'
+                          : isTaken
+                          ? 'bg-surface-container/30 border-outline-variant/20 opacity-40 cursor-not-allowed'
+                          : 'bg-surface-container hover:bg-surface-container-high border-outline-variant/40 hover:border-secondary/50'
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border border-secondary/30 mb-2 bg-[#1c1b18]">
+                        <img src={char.avatar} alt={char.name} className="w-full h-full object-cover" />
+                      </div>
+                      <span className="font-label-md text-xs text-on-surface">{char.name}</span>
+                      <span className="text-[10px] text-secondary uppercase tracking-wider mt-0.5">
+                        {char.tag}
+                      </span>
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 material-symbols-outlined text-secondary text-base">
+                          check_circle
+                        </span>
+                      )}
+                      {isTaken && (
+                        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase text-on-surface-variant bg-black/60 px-1 rounded">
+                          Taken
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Inquest Instructions note */}
+              <div className="mt-2 p-3 rounded-lg bg-surface-container border border-outline-variant/20 text-xs text-on-surface-variant">
+                <span className="text-secondary font-semibold">Courtyard Rules:</span> At match start, 1 player will
+                be chosen at random as <strong>Nagavalli</strong>. The remaining survivors must elude her grasp until
+                dawn.
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <button
-            onClick={onLeaveRoom}
-            className="px-5 py-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 text-sm font-semibold border border-zinc-800 transition"
-          >
-            Leave Room
-          </button>
-
-          {localPlayer && (
+          {/* Action Footer */}
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-outline-variant/30 items-center justify-between">
             <button
-              onClick={() => onToggleReady(!localPlayer.ready)}
-              className={`flex-1 py-3 px-6 rounded-lg font-bold text-sm tracking-wider uppercase transition ${
-                localPlayer.ready
-                  ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-600'
-                  : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-950'
-              }`}
+              onClick={onLeaveRoom}
+              className="w-full sm:w-auto px-6 py-3 bg-surface-container-high hover:bg-surface-bright text-on-surface rounded-lg font-label-md border border-outline-variant/40 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
-              {localPlayer.ready ? 'Cancel Ready' : 'Mark Ready'}
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              Leave Sanctuary
             </button>
-          )}
 
-          {isHost && (
-            <button
-              onClick={onStartGame}
-              disabled={!canStart}
-              className="flex-1 py-3 px-6 rounded-lg font-black text-sm tracking-widest uppercase transition bg-red-700 hover:bg-red-600 text-white shadow-lg shadow-red-950 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              START GAME
-            </button>
-          )}
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => onToggleReady(!localPlayer?.ready)}
+                className={`px-8 py-3 rounded-lg font-label-md transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer ${
+                  localPlayer?.ready
+                    ? 'bg-surface-container-high text-secondary border border-secondary/40'
+                    : 'bg-secondary text-on-secondary hover:bg-secondary-fixed'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {localPlayer?.ready ? 'check_box' : 'check_box_outline_blank'}
+                </span>
+                {localPlayer?.ready ? 'I AM READY' : 'READY UP'}
+              </button>
+
+              {isHost && (
+                <button
+                  onClick={onStartGame}
+                  disabled={!canStart}
+                  className={`px-8 py-3 rounded-lg font-label-md transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 cursor-pointer ${
+                    canStart
+                      ? 'bg-primary-container text-on-primary-container border-2 border-primary hover:bg-primary hover:text-on-primary animate-pulse'
+                      : 'bg-surface-container text-on-surface-variant/40 border border-outline-variant/20 cursor-not-allowed'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">play_arrow</span>
+                  {allReady ? 'START GAME' : `WAITING FOR PLAYERS (${playerCount}/${minRequired})`}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-
-        {/* Status helper text for host */}
-        {isHost && !canStart && (
-          <p className="text-center text-xs text-amber-500/80 mt-3 font-mono">
-            {playerCount < minRequired
-              ? `Need at least ${minRequired} player${minRequired > 1 ? 's' : ''} (${playerCount}/${minRequired})`
-              : 'Waiting for all players to click Ready'}
-          </p>
-        )}
       </div>
     </div>
   );
 };
-

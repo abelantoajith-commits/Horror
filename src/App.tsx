@@ -4,6 +4,7 @@ import { MainMenu } from './screens/MainMenu';
 import { Lobby } from './screens/Lobby';
 import { GameScreen } from './screens/GameScreen';
 import { Result } from './screens/Result';
+import { StitchHeader } from './screens/StitchHeader';
 import { RoomConnection, PlayerPresence, GameStartPayload, PosPayload, CaughtPayload, PhotoPayload, GameEndPayload } from './net/room';
 import { CONFIG } from './game/config';
 import { generateMaze, computeSpawns, checkCollision } from './game/maze';
@@ -464,7 +465,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black">
+    <div className="relative min-h-screen bg-surface font-body-md text-on-surface">
       {/* Hidden Video for Camera Stream (PRD: never displayed during gameplay) */}
       <video
         ref={videoRef}
@@ -473,6 +474,21 @@ export const App: React.FC = () => {
         muted
         style={{ display: 'none' }}
       />
+
+      {screen !== 'camera_gate' && screen !== 'game' && (
+        <StitchHeader
+          currentScreen={screen}
+          playerName={playerName || 'Investigator'}
+          onNavigateHome={() => {
+            if (screen === 'lobby' || screen === 'result') {
+              leaveRoom();
+            } else if (screen === 'main_menu') {
+              setMenuError(null);
+            }
+          }}
+          roomKey={roomKey}
+        />
+      )}
 
       {screen === 'camera_gate' && <CameraGate onStreamReady={handleStreamReady} />}
 
@@ -516,6 +532,8 @@ export const App: React.FC = () => {
           photoDataUrl={resultPhoto}
           victimOrSeekerName={targetName || (winner === 'nagavalli' ? 'Hider' : 'Nagavalli')}
           onBackToLobby={handleBackToLobby}
+          roomKey={roomKey}
+          playersCount={players.length}
         />
       )}
     </div>
