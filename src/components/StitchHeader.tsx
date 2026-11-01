@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { soundManager } from '../audio/soundManager';
 
 interface StitchHeaderProps {
   currentScreen: 'camera_gate' | 'main_menu' | 'lobby' | 'game' | 'result';
@@ -13,8 +14,14 @@ export const StitchHeader: React.FC<StitchHeaderProps> = ({
   onNavigateHome,
   roomKey,
 }) => {
-  const [audioMuted, setAudioMuted] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(() => soundManager.isMuted());
   const [tooltip, setTooltip] = useState<string | null>(null);
+
+  useEffect(() => {
+    return soundManager.subscribe((muted) => {
+      setAudioMuted(muted);
+    });
+  }, []);
 
   const showTooltip = (text: string) => {
     setTooltip(text);
@@ -78,8 +85,8 @@ export const StitchHeader: React.FC<StitchHeaderProps> = ({
           <button
             aria-label="Toggle Audio"
             onClick={() => {
-              setAudioMuted(!audioMuted);
-              showTooltip(audioMuted ? 'Mansion ambience unmuted' : 'Mansion ambience muted');
+              const nextMuted = soundManager.toggleMute();
+              showTooltip(nextMuted ? 'Mansion ambience muted' : 'Mansion ambience unmuted');
             }}
             className="text-[#d9c1c2] hover:text-[#e5e2dd] p-space-xs transition-colors rounded-full hover:bg-[#201f1b] cursor-pointer"
           >

@@ -11,6 +11,7 @@ import { generateMaze, computeSpawns, checkCollision } from './game/maze';
 import { GameEngine } from './game/engine';
 import { capturePhoto } from './camera/capture';
 import { spriteManager } from './game/render';
+import { soundManager } from './audio/soundManager';
 
 type AppScreen = 'camera_gate' | 'main_menu' | 'lobby' | 'game' | 'result';
 
@@ -150,6 +151,7 @@ export const App: React.FC = () => {
   };
 
   const leaveRoom = () => {
+    soundManager.setNagavalliWalking(false);
     if (roomRef.current) {
       roomRef.current.leave();
       roomRef.current = null;
@@ -161,19 +163,27 @@ export const App: React.FC = () => {
   };
 
   const handleCreateRoom = () => {
+    soundManager.unlock();
+    soundManager.startBgMusic();
     const key = generateRoomKey();
     joinOrCreateRoom(key);
   };
 
   const handleJoinRoom = (key: string) => {
+    soundManager.unlock();
+    soundManager.startBgMusic();
     joinOrCreateRoom(key);
   };
 
   const handleJoinTestRoom = () => {
+    soundManager.unlock();
+    soundManager.startBgMusic();
     joinOrCreateRoom('TEST');
   };
 
   const handleInstantNagavalliTest = () => {
+    soundManager.unlock();
+    soundManager.startBgMusic();
     // Generate a fresh maze
     const seed = Math.floor(Math.random() * 1000000);
     const maze = generateMaze(seed);
@@ -440,6 +450,7 @@ export const App: React.FC = () => {
   };
 
   const handleGameEnd = (winningSide: 'nagavalli' | 'hiders') => {
+    soundManager.setNagavalliWalking(false);
     setWinner(winningSide);
 
     if (winningSide === 'nagavalli') {

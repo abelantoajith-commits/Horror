@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { requestCameraStream } from '../camera/capture';
+import { soundManager } from '../audio/soundManager';
 
 interface CameraGateProps {
   onStreamReady: (stream: MediaStream) => void;
@@ -10,6 +11,8 @@ export const CameraGate: React.FC<CameraGateProps> = ({ onStreamReady }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleRequestPermission = async () => {
+    soundManager.unlock();
+    soundManager.startBgMusic();
     setLoading(true);
     setError(null);
     try {
@@ -33,6 +36,8 @@ export const CameraGate: React.FC<CameraGateProps> = ({ onStreamReady }) => {
 
   // Mock stream generator for testing environments without webcam hardware
   const handleVirtualStream = () => {
+    soundManager.unlock();
+    soundManager.startBgMusic();
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 240;

@@ -3,6 +3,7 @@ import { MazeData, checkCollision, Position } from './maze';
 import { InputHandler, Direction } from './input';
 import { PlayerRenderState, renderFrame } from './render';
 import { PosPayload, CaughtPayload } from '../net/room';
+import { soundManager } from '../audio/soundManager';
 
 export type GamePhase = 'role_reveal' | 'head_start' | 'chase' | 'ended';
 
@@ -131,6 +132,7 @@ export class GameEngine {
   }
 
   public detach(): void {
+    soundManager.setNagavalliWalking(false);
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
@@ -194,6 +196,7 @@ export class GameEngine {
 
   public handleRemoteCaught(caught: CaughtPayload): void {
     this.caughtHiderIds.add(caught.hiderId);
+    soundManager.playVidamatte();
 
     if (caught.hiderId === this.localPlayerId) {
       this.isCaught = true;
@@ -215,12 +218,52 @@ export class GameEngine {
     this.updatePhases();
     this.updateLocalMovement(dt);
     this.updateRemoteInterpolation(dt);
+    this.updateWalkingAudio();
     this.checkCatches();
 
     this.render(now);
 
     this.animFrameId = requestAnimationFrame(this.gameLoop);
   };
+
+  private updateWalkingAudio() {
+    if (this.currentPhase !== 'chase' || this.isCaught) {
+      soundManager.setNagavalliWalking(false);
+      return;
+    }
+
+    if (this.isNagavalli) {
+      // Local player is Nagavalli: walk sound when moving
+      const { isMoving } = this.input.getVector();
+      soundManager.setNagavalliWalking(isMoving, 1.0);
+    } else {
+      // Local player is Hider: hear footsteps when Nagavalli is moving nearby
+      let nagavalliPlayer: { x: number; y: number; isMoving: boolean } | null = null;
+      for (const remote of this.remotePlayers.values()) {
+        if (remote.isNagavalli) {
+          const isMoving =
+            remote.botMoving ||
+            Math.hypot(remote.targetX - remote.x, remote.targetY - remote.y) > 0.5 ||
+            Date.now() - remote.lastUpdated < 250;
+          nagavalliPlayer = { x: remote.x, y: remote.y, isMoving };
+          break;
+        }
+      }
+
+      if (nagavalliPlayer && nagavalliPlayer.isMoving) {
+        const dist = Math.hypot(this.localX - nagavalliPlayer.x, this.localY - nagavalliPlayer.y);
+        const hearingRange = 360;
+        if (dist <= hearingRange) {
+          const factor = Math.max(0.1, 1 - dist / hearingRange);
+          soundManager.setNagavalliWalking(true, factor);
+        } else {
+          soundManager.setNagavalliWalking(false);
+        }
+      } else {
+        soundManager.setNagavalliWalking(false);
+      }
+    }
+  }
 
   private updatePhases() {
     const phase = this.currentPhase;
@@ -374,6 +417,7 @@ export class GameEngine {
     const target = this.getVisibleTargetHider();
     if (!target) return false;
 
+    soundManager.playVidamatte();
     this.caughtHiderIds.add(target.id);
     target.isCaught = true;
     const order = this.caughtHiderIds.size;
@@ -394,6 +438,7 @@ export class GameEngine {
       if (!hider.isNagavalli && !hider.isCaught && !this.caughtHiderIds.has(id)) {
         const dist = Math.hypot(this.localX - hider.x, this.localY - hider.y);
         if (dist <= CONFIG.CATCH_DISTANCE) {
+          soundManager.playVidamatte();
           this.caughtHiderIds.add(id);
           hider.isCaught = true;
           const order = this.caughtHiderIds.size;
