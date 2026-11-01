@@ -17,6 +17,11 @@ export const CameraGate: React.FC<CameraGateProps> = ({ onStreamReady }) => {
       onStreamReady(stream);
     } catch (err: any) {
       console.warn('Camera request error:', err);
+      // In environments with no physical camera device (headless or testing), fall back seamlessly
+      if (err?.name === 'NotFoundError' || err?.message?.includes('Requested device not found')) {
+        handleVirtualStream();
+        return;
+      }
       setError(
         err?.message ||
           'Camera access was denied or no camera device was detected. Camera permission is required for the live game-over capture.'

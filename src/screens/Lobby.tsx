@@ -23,11 +23,11 @@ export interface CharacterInfo {
 }
 
 export const AVAILABLE_CHARACTERS: CharacterInfo[] = [
-  { id: 'hider_1', name: 'Nakulan', avatar: '/characters/player_1.png', tag: 'Scholar', color: '#e3c284' },
-  { id: 'hider_2', name: 'Ganga', avatar: '/characters/player_2.png', tag: 'Damsel', color: '#ffb2ba' },
-  { id: 'hider_3', name: 'Sunny', avatar: '/characters/player_3.png', tag: 'Psychiatrist', color: '#b7cbbf' },
-  { id: 'hider_4', name: 'Mahadevan', avatar: '/characters/player_4.png', tag: 'Poet', color: '#d4b477' },
-  { id: 'hider_5', name: 'Alli', avatar: '/characters/player_5.png', tag: 'Servant', color: '#91a599' },
+  { id: 'hider_1', name: 'Sreedevi', avatar: '/characters/player_1.png', tag: 'Investigator', color: '#e3c284' },
+  { id: 'hider_2', name: 'Nagulan', avatar: '/characters/player_2.png', tag: 'Scholar', color: '#ffb2ba' },
+  { id: 'hider_3', name: 'Unnithan', avatar: '/characters/player_3.png', tag: 'Patriarch', color: '#b7cbbf' },
+  { id: 'hider_4', name: 'Sunny', avatar: '/characters/player_4.png', tag: 'Psychiatrist', color: '#d4b477' },
+  { id: 'hider_5', name: 'Ramanadthan', avatar: '/characters/player_5.png', tag: 'Dancer', color: '#91a599' },
 ];
 
 export const Lobby: React.FC<LobbyProps> = ({
@@ -263,6 +263,20 @@ export const Lobby: React.FC<LobbyProps> = ({
                     </button>
                   );
                 })}
+
+                {/* Nagavalli Spirit Slot (Assigned at match start) */}
+                <div className="relative flex flex-col items-center p-3 rounded-xl border border-[#641e2b]/50 bg-[#251014]/60 text-center select-none shadow-md">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#ffb2ba]/40 mb-2 bg-[#1c1b18]">
+                    <img src="/characters/nagavalli.png" alt="Nagavalli" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="font-label-md text-xs text-[#ffd9dc] font-bold">Nagavalli</span>
+                  <span className="text-[10px] text-[#ffb2ba] uppercase tracking-wider mt-0.5">
+                    The Spirit
+                  </span>
+                  <span className="absolute top-2 right-2 text-[9px] font-bold uppercase text-[#ffb2ba] bg-[#641e2b]/80 px-1.5 py-0.5 rounded border border-[#ffb2ba]/30">
+                    Spirit
+                  </span>
+                </div>
               </div>
 
               {/* Inquest Instructions note */}

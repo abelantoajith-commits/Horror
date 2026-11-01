@@ -184,11 +184,11 @@ export const App: React.FC = () => {
 
     // 5 distinct hider characters randomly placed in the maze
     const testHiders = [
-      { id: 'bot_hider_1', name: 'Player 1', skin: 'hider_1', isNagavalli: false },
-      { id: 'bot_hider_2', name: 'Player 2', skin: 'hider_2', isNagavalli: false },
-      { id: 'bot_hider_3', name: 'Player 3', skin: 'hider_3', isNagavalli: false },
-      { id: 'bot_hider_4', name: 'Player 4', skin: 'hider_4', isNagavalli: false },
-      { id: 'bot_hider_5', name: 'Player 5', skin: 'hider_5', isNagavalli: false },
+      { id: 'bot_hider_1', name: 'Sreedevi', skin: 'hider_1', isNagavalli: false },
+      { id: 'bot_hider_2', name: 'Nagulan', skin: 'hider_2', isNagavalli: false },
+      { id: 'bot_hider_3', name: 'Unnithan', skin: 'hider_3', isNagavalli: false },
+      { id: 'bot_hider_4', name: 'Sunny', skin: 'hider_4', isNagavalli: false },
+      { id: 'bot_hider_5', name: 'Ramanadthan', skin: 'hider_5', isNagavalli: false },
     ];
 
     const hiderIds = testHiders.map((h) => h.id);
